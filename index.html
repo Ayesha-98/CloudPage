@@ -26,9 +26,16 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      margin-right: 5px;
     }
     button:hover {
       background-color: #005fa3;
+    }
+    .view-db {
+      background-color: #28a745;
+    }
+    .view-db:hover {
+      background-color: #218838;
     }
     ul {
       list-style-type: none;
@@ -48,6 +55,7 @@
   <input id="name" placeholder="Name" />
   <input id="email" placeholder="Email" />
   <button onclick="addRecord()">Add</button>
+  <button class="view-db" onclick="viewDatabase()">📊 View Database</button>
 
   <h2>Stored Records:</h2>
   <ul id="records"></ul>
@@ -76,6 +84,10 @@
       const data = await res.json();
       const container = document.getElementById("records");
       container.innerHTML = data.map(r => `<li><strong>${r.email}</strong></li>`).join("");
+    }
+
+    function viewDatabase() {
+      window.open(`${WORKER_URL}/db-view`, '_blank');
     }
 
     loadRecords();
