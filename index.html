@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 15px;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>User Form</h2>
+
+    <input type="text" id="name" placeholder="Enter Name" />
+    <input type="email" id="email" placeholder="Enter Email" />
+
+    <button onclick="submitData()">Submit</button>
+
+    <p id="message"></p>
+  </div>
+
+  <script>
+    async function submitData() {
+      const name = document.getElementById("name").value;
+      const email = document.getElementById("email").value;
+
+      const response = await fetch("YOUR_WORKER_URL", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email }),
+      });
+
+      const result = await response.json();
+
+      document.getElementById("message").innerText = result.message;
+    }
+  </script>
+
+</body>
+</html>
