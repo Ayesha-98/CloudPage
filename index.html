@@ -10,65 +10,84 @@
       margin: 40px;
       background-color: #f9f9f9;
     }
-    h1 { color: #222; }
+    h1 {
+      color: #222;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
     input {
-      padding: 8px;
-      margin-right: 8px;
+      padding: 10px;
+      margin: 5px;
       border: 1px solid #ccc;
       border-radius: 4px;
+      width: calc(50% - 22px);
     }
     button {
-      padding: 8px 12px;
+      padding: 10px 20px;
       background-color: #0078d4;
       color: white;
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      margin-right: 5px;
+      margin-top: 10px;
     }
-    button:hover { background-color: #005fa3; }
-    .view-db { background-color: #28a745; }
-    .view-db:hover { background-color: #218838; }
-    ul { list-style-type: none; padding: 0; }
+    button:hover {
+      background-color: #005fa3;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
     li {
-      background: #fff;
-      margin: 6px 0;
-      padding: 10px;
+      background: #f5f5f5;
+      margin: 10px 0;
+      padding: 15px;
       border-radius: 4px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border-left: 4px solid #0078d4;
     }
-    .message {
+    .error {
+      color: red;
       padding: 10px;
+      background: #ffe6e6;
       border-radius: 4px;
       margin: 10px 0;
-      display: none;
     }
-    .error { background: #ffe6e6; color: red; display: block; }
-    .success { background: #e6ffe6; color: green; display: block; }
+    .success {
+      color: green;
+      padding: 10px;
+      background: #e6ffe6;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
   </style>
 </head>
 <body>
-  <h1>Add Record</h1>
-  <div id="message" class="message"></div>
-  <input id="name" placeholder="Name" />
-  <input id="email" placeholder="Email" />
-  <button onclick="addRecord()">Add</button>
-  <button class="view-db" onclick="viewDatabase()">📊 View Database</button>
+  <div class="container">
+    <h1>📝 Add Record to Database</h1>
+    <div>
+      <input type="text" id="name" placeholder="Enter Name" />
+      <input type="email" id="email" placeholder="Enter Email" />
+      <button onclick="addRecord()">➕ Add Record</button>
+    </div>
 
-  <h2>Stored Records:</h2>
-  <ul id="records"></ul>
+    <h2>📊 Stored Records:</h2>
+    <div id="message"></div>
+    <ul id="records">
+      <li>Loading records...</li>
+    </ul>
+  </div>
 
   <script>
-    const WORKER_URL = "https://cloudflaredb-pages.yasir-ali.workers.dev";
-
-    function showMessage(text, type) {
-      const msgDiv = document.getElementById("message");
-      msgDiv.textContent = text;
-      msgDiv.className = "message " + type;
-      setTimeout(() => {
-        msgDiv.className = "message";
-      }, 3000);
-    }
+    // IMPORTANT: Replace this URL with your actual Worker URL
+    const WORKER_URL = "https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev";
+    
+    // For testing locally, you can use: const WORKER_URL = "http://localhost:8787";
 
     async function addRecord() {
       const name = document.getElementById("name").value.trim();
@@ -86,48 +105,52 @@
           body: JSON.stringify({ name, email })
         });
 
-        if (response.ok) {
-          document.getElementById("name").value = "";
-          document.getElementById("email").value = "";
-          showMessage("Record added successfully!", "success");
-          loadRecords();
-        } else {
-          const error = await response.json();
-          showMessage("Error: " + (error.error || "Failed to add"), "error");
-        }
+        if (!response.ok) throw new Error("Failed to add record");
+        
+        const result = await response.json();
+        showMessage("✅ Record added successfully!", "success");
+        
+        document.getElementById("name").value = "";
+        document.getElementById("email").value = "";
+        loadRecords();
       } catch (error) {
-        showMessage("Connection error. Make sure worker is deployed.", "error");
-        console.error("Error:", error);
+        showMessage("❌ Error adding record: " + error.message, "error");
       }
     }
 
     async function loadRecords() {
-      const container = document.getElementById("records");
-      container.innerHTML = "<li>Loading...</li>";
-      
       try {
-        const res = await fetch(`${WORKER_URL}/list`);
-        if (!res.ok) throw new Error("Failed to fetch");
+        const response = await fetch(`${WORKER_URL}/list`);
+        if (!response.ok) throw new Error("Failed to load records");
         
-        const data = await res.json();
+        const records = await response.json();
+        const container = document.getElementById("records");
         
-        if (data.length === 0) {
-          container.innerHTML = "<li>No records found. Add some data!</li>";
-        } else {
-          container.innerHTML = data.map(r => 
-            `<li><strong>${r.name || 'N/A'}</strong> - ${r.email || 'N/A'}</li>`
-          ).join("");
+        if (records.length === 0) {
+          container.innerHTML = "<li>No records found. Add some!</li>";
+          return;
         }
+        
+        container.innerHTML = records.map(record => `
+          <li>
+            <strong>👤 Name:</strong> ${record.name}<br>
+            <strong>📧 Email:</strong> ${record.email}
+          </li>
+        `).join("");
       } catch (error) {
-        console.error("Error loading records:", error);
-        container.innerHTML = "<li style='color: red;'>Failed to load. Deploy worker first!</li>";
+        document.getElementById("records").innerHTML = `<li class="error">Error loading records: ${error.message}</li>`;
       }
     }
 
-    function viewDatabase() {
-      window.open(`${WORKER_URL}/db-view`, '_blank');
+    function showMessage(msg, type) {
+      const msgDiv = document.getElementById("message");
+      msgDiv.innerHTML = `<div class="${type}">${msg}</div>`;
+      setTimeout(() => {
+        msgDiv.innerHTML = "";
+      }, 3000);
     }
 
+    // Load records when page loads
     loadRecords();
   </script>
 </body>
